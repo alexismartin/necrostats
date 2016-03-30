@@ -90,21 +90,24 @@ var parseReplayFile = function(filename) {
 		if(false && infos.version != '75') resolve(infos);
 		else {
 			fs.readFile(filename, 'utf8', function(err, data) {
-				if (err) reject(err);
-				var splitedData = data.split('\\n');
-				if(splitedData[8]) {
-					infos.time = parseInt(splitedData[8], 10);
-					infos.formatedTime = formatTime(infos.time);
+				if (err) {
+					reject(err);
+				} else {
+					var splitedData = data.split('\\n');
+					if(splitedData[8]) {
+						infos.time = parseInt(splitedData[8], 10);
+						infos.formatedTime = formatTime(infos.time);
+					}
+					if(splitedData[10]) infos.seed = calculateSeed(splitedData[10]);
+					if(splitedData[11]) infos.players = parseInt(splitedData[11], 10);
+					if(splitedData[17]) infos.char1 = splitedData[15].substr(0,1);
+					if(infos.players > 1 && splitedData[17]) {
+						infos.char2 = splitedData[17].substr(0,1);
+					}
+					//TODO take into account zones mode
+					if(splitedData[9]) infos.endZone = getZoneForChar(parseInt(splitedData[9], 10), infos.char1, infos.type);
+					resolve(infos);
 				}
-				if(splitedData[10]) infos.seed = calculateSeed(splitedData[10]);
-				if(splitedData[11]) infos.players = parseInt(splitedData[11], 10);
-				if(splitedData[17]) infos.char1 = splitedData[15].substr(0,1);
-				if(infos.players > 1 && splitedData[17]) {
-					infos.char2 = splitedData[17].substr(0,1);
-				}
-				//TODO take into account zones mode
-				if(splitedData[9]) infos.endZone = getZoneForChar(parseInt(splitedData[9], 10), infos.char1, infos.type);
-				resolve(infos);
 			});
 		}
 	});

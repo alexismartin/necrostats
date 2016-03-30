@@ -3,16 +3,47 @@ var formatTime = require('./parser').formatTime;
 var fs = require('fs');
 var Promise = require('promise');
 var _ = require('lodash');
+var os = require('os');
 
 var getNDPath = function() {
+	var homedir = os.homedir(),
+		ostype = os.type();
 	var paths = {
-		mac: [
-			'/Users/alexis/Library/Application Support/Steam/steamapps/common/Crypt of the NecroDancer/replays',
+		'Darwin': [
+			homedir + '/../Library/Application Support/Steam/steamapps/common/Crypt of the NecroDancer/replays',
 			'/Applications/Crypt of the Necrodancer.app/Contents/Resources/game/replays'
+		],
+		'Linux': [
+			//TODO steam
+			homedir + '/GOG Games/Crypt of the NecroDancer/game/replays'
+		],
+		'Windows_NT': [
+			//TODO steam
+			//TODO gog
 		]
 	};
-	//TODO
-	return paths.mac[0];
+
+	//TODO get from config file
+
+	if(paths[ostype]) {
+		for(var i = 0, len = paths[ostype].length; i < len; i++) {
+			var path = paths[ostype][i],
+				pathStats = fs.statSync(path);
+			if(pathStats && pathStats.isDirectory()) {
+				return path;
+			} 
+		}
+	}
+
+	//TODO ask user before throwing error?
+	throw new Error('Replay path not found');
+
+};
+
+var filterReplayFiles = function(files) {
+	return _.filter(files, function(file) {
+		return /\.dat$/.test(file);
+	});
 };
 
 
@@ -37,17 +68,30 @@ var dataAnalysis = function(runs) {
 
 };
 
-var path = getNDPath();
+var init = function() {
+	var path = getNDPath();
 
-fs.readdir(path, function(err, files) {
-	Promise.all(files.map(function(file) {
-		return parse(path+'/'+file);
-	})).done(function(runs) {
-		// console.log(runs);
+	fs.readdir(path, function(err, files) {
+		if(err) throw err;
 
-		dataAnalysis(runs);
+		files = filterReplayFiles(files);
 
-	}, function(runs) {
-		console.log(runs);
+		//TODO, arrange a queue and don't read all the data in parallel
+		Promise.all(files.map(function(file) {
+			return parse(path+'/'+file);
+		})).done(function(runs) {
+			// console.log(runs);
+
+			dataAnalysis(runs);
+
+		}, function(runs) {
+			console.log(runs);
+		});
 	});
-});
+};
+
+try{
+	init();
+} catch(e) {
+	console.error(e);
+}
