@@ -1,7 +1,7 @@
 var parse = require('./parser').parse;
 var formatTime = require('./parser').formatTime;
 var fs = require('fs');
-var Promise = require('promise');
+var Promise = require('bluebird');
 var _ = require('lodash');
 var os = require('os');
 
@@ -64,7 +64,7 @@ var dataAnalysis = function(runs) {
 		return run.formatedTime;
 	});
 	// _.sortBy(times, 'formatedTime');
-	console.log('Times:\n', _.sortBy(finishedUnseeded, 'formatedTime'));
+	console.log('Times:\n', _.sortBy(finishedUnseeded, 'time').slice(0,10));
 
 };
 
@@ -76,16 +76,15 @@ var init = function() {
 
 		files = filterReplayFiles(files);
 
-		//TODO, arrange a queue and don't read all the data in parallel
-		Promise.all(files.map(function(file) {
+		Promise.map(files, function(file) {
 			return parse(path+'/'+file);
-		})).done(function(runs) {
+		}, {concurrency: 1000}).done(function(runs) {
 			// console.log(runs);
 
 			dataAnalysis(runs);
 
 		}, function(runs) {
-			console.log(runs);
+			// console.log(runs);
 		});
 	});
 };

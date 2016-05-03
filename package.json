@@ -4,8 +4,8 @@
   "description": "Stats generator for necrodancer replay files",
   "dependencies": {
     "big-integer": "^1.6.12",
+    "bluebird": "^3.3.5",
     "lodash": "^4.5.0",
-    "moment": "^2.11.1",
-    "promise": "^7.1.1"
+    "moment": "^2.11.1"
   }
 }
