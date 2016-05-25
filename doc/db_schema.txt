@@ -1,0 +1,35 @@
+run
+-------
+run_id (pk)
+version
+run_date
+type
+time
+fromated_time
+seed
+players
+char1
+char2
+end_zone
+finished
+killed_by
+score
+imported_date
+
+tag
+-------
+tag_id (pk)
+name
+color
+
+
+run_tag
+-------
+run_id (pk, fk:run)
+tag_id (pk, fk:tag)
+
+bugged
+-------
+run_id (pk, fk:run)
+bugged_reason (pk)
+bugged_data
