@@ -55,7 +55,7 @@ var dataAnalysis = function(runs) {
 	console.log('Total time:', formatTime(totalTime));
 
 	var finishedUnseeded = _.filter(runs, function(run) {
-		return run.type == '6' && run.char1 == '0' && run.endZone == '4-5';
+		return run.type == '6' && run.char1 == '0' && run.endZone == '4-5' && !run.bugged;
 	});
 
 

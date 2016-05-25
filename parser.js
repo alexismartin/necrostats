@@ -9,6 +9,7 @@ var args = process.argv.slice(2);
 
 
 var calculateSeed = function(z11seed) {
+	//TODO fix for zone mode?
 	var period = bigInt(4294967296);
 	var seed = bigInt(z11seed, 10).minus(6);
 	while(bigInt(0).greater(seed)) {
@@ -45,7 +46,7 @@ var formatTime = function(ms) {
 	return formatedTime;
 };
 
-var getZoneForChar = function(songs, char1, type) {
+var getZoneForChar = function(songs, char1, type, infos) {
 	var numType = parseInt(type, 10);
 	switch(char1) {
 		case '0': //cadence
@@ -61,7 +62,10 @@ var getZoneForChar = function(songs, char1, type) {
 				floor = ((songs-1) % 4) + 1;
 			if(char1 === '2') zone = 5 - zone;
 			if(zone > 4) {
-				console.log('bugged?',zone,'-',floor);
+				if(zone > 5 || floor > 2) {
+					infos.bugged = 'NB_SONGS';
+					infos.buggedData = 'Number of songs is '+songs+' which makes invalid zone '+zone+'-'+floor+'.'; 
+				}
 				zone = 4;
 				floor = 5;
 			}
@@ -104,8 +108,7 @@ var parseReplayFile = function(filename) {
 					if(infos.players > 1 && splitedData[17]) {
 						infos.char2 = splitedData[17].substr(0,1);
 					}
-					//TODO take into account zones mode
-					if(splitedData[9]) infos.endZone = getZoneForChar(parseInt(splitedData[9], 10), infos.char1, infos.type);
+					if(splitedData[9]) infos.endZone = getZoneForChar(parseInt(splitedData[9], 10), infos.char1, infos.type, infos);
 					resolve(infos);
 				}
 			});
