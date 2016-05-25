@@ -10,7 +10,7 @@ var getNDPath = function() {
 		ostype = os.type();
 	var paths = {
 		'Darwin': [
-			homedir + '/../Library/Application Support/Steam/steamapps/common/Crypt of the NecroDancer/replays',
+			homedir + '/Library/Application Support/Steam/steamapps/common/Crypt of the NecroDancer/replays',
 			'/Applications/Crypt of the Necrodancer.app/Contents/Resources/game/replays'
 		],
 		'Linux': [
