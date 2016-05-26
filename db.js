@@ -1,6 +1,7 @@
 var sqlite3 = require('sqlite3').verbose();
 var db = new sqlite3.Database('necrostats');
 var Promise = require('bluebird');
+var _ = require('lodash');
 
 var initDB = function() {
 	return new Promise(function(resolve, reject) {
@@ -17,6 +18,7 @@ var initDB = function() {
 					players int,
 					char1 text,
 					char2 text,
+					songs int,
 					end_zone text,
 					finished integer,
 					killed_by text,
@@ -68,7 +70,7 @@ var insertRuns = function(runs) {
 		if(!runs.length) {
 			resolve(0);
 		} else {			
-			var runStatement = `INSERT INTO run 
+			var runQuery = `INSERT INTO run 
 				(file,
 				version,
 				run_date,
@@ -79,22 +81,21 @@ var insertRuns = function(runs) {
 				players,
 				char1,
 				char2,
+				songs,
 				end_zone,
 				imported_date) 
 				VALUES `;
-			var buggedStatement = db.prepare(`INSERT INTO bugged 
+			var buggedQuery = `INSERT INTO bugged 
 				(run_id,
 				bugged_reason,
 				bugged_data) 
-				VALUES($run_id,
-				$bugged_reason,
-				$bugged_data)`);
+				VALUES `;
 
 
 			for (var i = 0, len = runs.length; i < len; i++) {
 				var run = runs[i];
 
-				runStatement += "('"+
+				runQuery += "('"+
 				run.filename+"',"+
 				run.version+","+
 				(run.date.getTime()/1000)+",'"+
@@ -104,15 +105,35 @@ var insertRuns = function(runs) {
 				run.seed+","+
 				run.players+",'"+
 				run.char1+"','"+
-				(run.char2||null)+"','"+
+				(run.char2||'')+"',"+
+				run.songs+",'"+
 				run.endZone+"',"+
 				"strftime('%s','now')),";
 			}
-			db.run(runStatement.slice(0, -1), function(err) {
+
+			db.run(runQuery.slice(0, -1), function(err) {
 				if(err) {
 					reject(err);
 				} else {
-					resolve(this.changes);
+					var changes = this.changes;
+					var bugged = _.filter(runs, function(run) {
+						return run.bugged;
+					});
+
+					for (var i = 0, len = bugged.length; i < len; i++) {
+						var run = bugged[i];
+							buggedQuery += "((SELECT run_id FROM run WHERE file='"+run.filename+"'),'"+
+							run.bugged+"','"+
+							run.buggedData+"'),";
+					}
+
+					db.run(buggedQuery.slice(0, -1), function(err) {
+						if(err) {
+							reject(err);
+						} else {
+							resolve(changes);
+						}
+					});
 				}
 			});
 		}

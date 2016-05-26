@@ -60,7 +60,7 @@ var getZoneForChar = function(songs, char1, type, infos) {
 		case '9': //bard
 			var zone = numType < 5 ? numType : Math.floor((songs-1)/4) + 1,
 				floor = ((songs-1) % 4) + 1;
-			if(char1 === '2') zone = 5 - zone;
+			if(char1 === '2' && numType >= 5) zone = 5 - zone;
 			if(zone > 4) {
 				if(zone > 5 || floor > 2) {
 					infos.bugged = 'NB_SONGS';
@@ -68,6 +68,11 @@ var getZoneForChar = function(songs, char1, type, infos) {
 				}
 				zone = 4;
 				floor = 5;
+			} else if(zone < 1) { // For aria
+				infos.bugged = 'NB_SONGS';
+				infos.buggedData = 'Number of songs is '+songs+' which makes invalid zone '+zone+'-'+floor+'.'; 
+				zone = 1;
+				floor = 4;
 			}
 			return zone + '-' + floor;
 		case '6': //dove
@@ -109,7 +114,10 @@ var parseReplayFile = function(filename) {
 					if(infos.players > 1 && splitedData[17]) {
 						infos.char2 = splitedData[17].substr(0,1);
 					}
-					if(splitedData[9]) infos.endZone = getZoneForChar(parseInt(splitedData[9], 10), infos.char1, infos.type, infos);
+					if(splitedData[9]) {
+						infos.songs = parseInt(splitedData[9], 10);
+						infos.endZone = getZoneForChar(parseInt(splitedData[9], 10), infos.char1, infos.type, infos);
+					}
 					resolve(infos);
 				}
 			});

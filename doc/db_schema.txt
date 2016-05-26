@@ -11,6 +11,7 @@ seed
 players
 char1
 char2
+songs
 end_zone
 finished
 killed_by
