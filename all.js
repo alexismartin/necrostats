@@ -4,6 +4,7 @@ var fs = require('fs');
 var Promise = require('bluebird');
 var _ = require('lodash');
 var os = require('os');
+var db = require('./db');
 
 var getNDPath = function() {
 	var homedir = os.homedir(),
@@ -71,21 +72,37 @@ var dataAnalysis = function(runs) {
 var init = function() {
 	var path = getNDPath();
 
-	fs.readdir(path, function(err, files) {
-		if(err) throw err;
+	db.initDB().then(function() {
+		fs.readdir(path, function(err, files) {
+			if(err) throw err;
 
-		files = filterReplayFiles(files);
+			files = filterReplayFiles(files);
+			
+			db.getAllFiles().then(function(importedFiles) {
+				importedFiles = importedFiles.map(function(f) {
+					return f.file;
+				});
+				files = _.filter(files, function(f) {
+					return importedFiles.indexOf(f) === -1;
+				});
 
-		Promise.map(files, function(file) {
-			return parse(path+'/'+file);
-		}, {concurrency: 1000}).done(function(runs) {
-			// console.log(runs);
-
-			dataAnalysis(runs);
-
-		}, function(runs) {
-			// console.log(runs);
+				Promise.map(files, function(file) {
+					return parse(path+'/'+file);
+				}, {concurrency: 1000}).done(function(runs) {
+					db.insertRuns(runs).then(function(nbInsert) {
+						console.log(nbInsert+' new runs inserted.');
+					}, function(err) {
+						throw new Error('DB error: '+err);
+					});
+				}, function(runs) {
+					// console.log(runs);
+				});
+			}, function(err) {
+				throw new Error('DB error: '+err);
+			});
 		});
+	}, function(err) {
+		throw new Error('DB error: '+err);
 	});
 };
 

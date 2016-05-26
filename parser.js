@@ -80,6 +80,7 @@ var parseReplayFile = function(filename) {
 		name = path.basename(filename, '.dat'),
 		splitName = name.split('_');
 	infos.version = splitName[0];
+	infos.filename = name+'.dat';
 	infos.date = new Date(
 		parseInt(splitName[3], 10),
 		parseInt(splitName[4], 10) - 1,
