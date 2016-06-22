@@ -5,6 +5,7 @@ var Promise = require('bluebird');
 var _ = require('lodash');
 var os = require('os');
 var db = require('./db');
+var chokidar = require('chokidar');
 
 var getNDPath = function() {
 	var homedir = os.homedir(),
@@ -72,42 +73,60 @@ var dataAnalysis = function(runs) {
 var init = function() {
 	var path = getNDPath();
 
-	db.initDB().then(function() {
-		fs.readdir(path, function(err, files) {
-			if(err) throw err;
+	return new Promise(function(resolve, reject) {
+		db.initDB().then(function() {
+			fs.readdir(path, function(err, files) {
+				if(err) throw err;
 
-			files = filterReplayFiles(files);
-			
-			db.getAllFiles().then(function(importedFiles) {
-				importedFiles = importedFiles.map(function(f) {
-					return f.file;
-				});
-				files = _.filter(files, function(f) {
-					return importedFiles.indexOf(f) === -1;
-				});
-
-				Promise.map(files, function(file) {
-					return parse(path+'/'+file);
-				}, {concurrency: 1000}).done(function(runs) {
-					db.insertRuns(runs).then(function(nbInsert) {
-						console.log(nbInsert+' new runs inserted.');
-					}, function(err) {
-						throw new Error('DB error: '+err);
+				files = filterReplayFiles(files);
+				
+				db.getAllFiles().then(function(importedFiles) {
+					importedFiles = importedFiles.map(function(f) {
+						return f.file;
 					});
-				}, function(runs) {
-					// console.log(runs);
+					files = _.filter(files, function(f) {
+						return importedFiles.indexOf(f) === -1;
+					});
+
+					if(files.length) {
+						Promise.map(files, function(file) {
+							return parse(path+'/'+file);
+						}, {concurrency: 1000}).done(function(runs) {
+							db.insertRuns(runs).then(function(nbInsert) {
+								console.log(nbInsert+' new runs inserted.');
+								resolve(nbInsert+' new runs inserted.');
+							}, function(err) {
+								throw new Error('DB error: '+err);
+							});
+						}, function(runs) {
+							// console.log(runs);
+						});						
+					} else {
+						console.log('No new runs inserted.');
+						resolve('No new runs inserted.');
+					}
+				}, function(err) {
+					throw new Error('DB error: '+err);
 				});
-			}, function(err) {
-				throw new Error('DB error: '+err);
 			});
+		}, function(err) {
+			throw new Error('DB error: '+err);
 		});
-	}, function(err) {
-		throw new Error('DB error: '+err);
+	});
+};
+
+var watchNewReplays = function() {
+	var path = getNDPath();
+	console.log('Init watching of new replay files')
+	chokidar.watch(path, {ignoreInitial: true}).on('add', (file) => {
+		parse(file).then(function(run) {
+			db.insertRun(run).then(insertedRun => {console.log('Inserted new run:', insertedRun);});
+		});
 	});
 };
 
 try{
-	init();
+	init().then(watchNewReplays);
 } catch(e) {
 	console.error(e);
 }

@@ -65,6 +65,72 @@ var getAllFiles = function() {
 	});
 };
 
+var insertRun = function(run) {
+	return new Promise(function(resolve, reject) {
+		if(!run) {
+			resolve(0);
+		} else {			
+			var runQuery = `INSERT INTO run 
+				(file,
+				version,
+				run_date,
+				type,
+				time,
+				fromated_time,
+				seed,
+				players,
+				char1,
+				char2,
+				songs,
+				end_zone,
+				imported_date) 
+				VALUES `;
+			var buggedQuery = `INSERT INTO bugged 
+				(run_id,
+				bugged_reason,
+				bugged_data) 
+				VALUES `;
+
+			runQuery += "('"+
+			run.filename+"',"+
+			run.version+","+
+			(run.date.getTime()/1000)+",'"+
+			run.type+"',"+
+			run.time+",'"+
+			run.formatedTime+"',"+
+			run.seed+","+
+			run.players+",'"+
+			run.char1+"','"+
+			(run.char2||'')+"',"+
+			run.songs+",'"+
+			run.endZone+"',"+
+			"strftime('%s','now'))";
+
+			db.run(runQuery, function(err) {
+				if(err) {
+					reject(err);
+				} else {
+					if(run.bugged) {
+						buggedQuery += "((SELECT run_id FROM run WHERE file='"+run.filename+"'),'"+
+						run.bugged+"','"+
+						run.buggedData+"')";
+
+						db.run(buggedQuery, function(err) {
+							if(err) {
+								reject(err);
+							} else {
+								resolve(run); // TODO return inserted id instead?
+							}
+						});
+					} else {
+						resolve(run);
+					}
+				}
+			});
+		}
+	});
+};
+
 var insertRuns = function(runs) {
 	return new Promise(function(resolve, reject) {
 		if(!runs.length) {
@@ -120,20 +186,24 @@ var insertRuns = function(runs) {
 						return run.bugged;
 					});
 
-					for (var i = 0, len = bugged.length; i < len; i++) {
-						var run = bugged[i];
-							buggedQuery += "((SELECT run_id FROM run WHERE file='"+run.filename+"'),'"+
-							run.bugged+"','"+
-							run.buggedData+"'),";
-					}
-
-					db.run(buggedQuery.slice(0, -1), function(err) {
-						if(err) {
-							reject(err);
-						} else {
-							resolve(changes);
+					if(bugged.length) {
+						for (var i = 0, len = bugged.length; i < len; i++) {
+							var run = bugged[i];
+								buggedQuery += "((SELECT run_id FROM run WHERE file='"+run.filename+"'),'"+
+								run.bugged+"','"+
+								run.buggedData+"'),";
 						}
-					});
+
+						db.run(buggedQuery.slice(0, -1), function(err) {
+							if(err) {
+								reject(err);
+							} else {
+								resolve(changes);
+							}
+						});
+					} else {
+						resolve(changes);
+					}
 				}
 			});
 		}
@@ -142,4 +212,5 @@ var insertRuns = function(runs) {
 
 module.exports.initDB = initDB;
 module.exports.getAllFiles = getAllFiles;
+module.exports.insertRun = insertRun;
 module.exports.insertRuns = insertRuns;
