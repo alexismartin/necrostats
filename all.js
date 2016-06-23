@@ -16,11 +16,15 @@ var getNDPath = function() {
 			'/Applications/Crypt of the Necrodancer.app/Contents/Resources/game/replays'
 		],
 		'Linux': [
-			//TODO steam
+			homedir + '/.local/share/steam/steamapps/common/Crypt of the NecroDancer/replays',
+			homedir + '/.local/share/Steam/steamapps/common/Crypt of the NecroDancer/replays',
+			homedir + '/.local/share/steam/SteamApps/common/Crypt of the NecroDancer/replays',
+			homedir + '/.local/share/Steam/SteamApps/common/Crypt of the NecroDancer/replays',
 			homedir + '/GOG Games/Crypt of the NecroDancer/game/replays'
 		],
 		'Windows_NT': [
-			//TODO steam
+			process.env['ProgramFiles'] + "\\Steam\\SteamApps\\common\\Crypt of the NecroDancer\\replays",			
+			process.env['ProgramFiles(x86)'] + "\\Steam\\SteamApps\\common\\Crypt of the NecroDancer\\replays"
 			//TODO gog
 		]
 	};
@@ -29,11 +33,15 @@ var getNDPath = function() {
 
 	if(paths[ostype]) {
 		for(var i = 0, len = paths[ostype].length; i < len; i++) {
-			var path = paths[ostype][i],
-				pathStats = fs.statSync(path);
-			if(pathStats && pathStats.isDirectory()) {
-				return path;
-			} 
+			try {				
+				var path = paths[ostype][i],
+					pathStats = fs.statSync(path);
+				if(pathStats && pathStats.isDirectory()) {
+					return path;
+				} 
+			} catch(e) {
+				
+			}
 		}
 	}
 
