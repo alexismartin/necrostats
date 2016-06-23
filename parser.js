@@ -3,7 +3,7 @@ var path = require('path');
 var bigInt = require('big-integer');
 var moment = require('moment');
 
-var Promise = require('promise');
+var Promise = require('bluebird');
 
 var args = process.argv.slice(2);
 
