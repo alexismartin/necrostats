@@ -40,7 +40,7 @@ var getNDPath = function() {
 					return path;
 				} 
 			} catch(e) {
-				
+
 			}
 		}
 	}
@@ -133,8 +133,10 @@ var watchNewReplays = function() {
 	});
 };
 
-try{
-	init().then(watchNewReplays);
-} catch(e) {
-	console.error(e);
-}
+var startReplay = function() {
+	try{
+		init().then(watchNewReplays);
+	} catch(e) {
+		console.error(e);
+	}
+};

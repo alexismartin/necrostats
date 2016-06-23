@@ -2,6 +2,7 @@
   "name": "necrostats",
   "version": "1.0.0",
   "description": "Stats generator for necrodancer replay files",
+  "main": "index.html",
   "dependencies": {
     "big-integer": "^1.6.12",
     "bluebird": "^3.3.5",
