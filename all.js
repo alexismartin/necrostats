@@ -6,6 +6,8 @@ var _ = require('lodash');
 var os = require('os');
 var db = require('./db');
 var chokidar = require('chokidar');
+var initLog = require('./log').initLog;
+var log = require('./log').log;
 
 var getNDPath = function() {
 	var homedir = os.homedir(),
@@ -80,9 +82,11 @@ var dataAnalysis = function(runs) {
 
 var init = function() {
 	var path = getNDPath();
+	log('Starting init');
 
 	return new Promise(function(resolve, reject) {
 		db.initDB().then(function() {
+			log('DB initialized');
 			fs.readdir(path, function(err, files) {
 				if(err) throw err;
 
@@ -101,7 +105,7 @@ var init = function() {
 							return parse(path+'/'+file);
 						}, {concurrency: 1000}).done(function(runs) {
 							db.insertRuns(runs).then(function(nbInsert) {
-								console.log(nbInsert+' new runs inserted.');
+								log(nbInsert+' new runs inserted.');
 								resolve(nbInsert+' new runs inserted.');
 							}, function(err) {
 								throw new Error('DB error: '+err);
@@ -110,7 +114,7 @@ var init = function() {
 							// console.log(runs);
 						});						
 					} else {
-						console.log('No new runs inserted.');
+						log('No new runs inserted.');
 						resolve('No new runs inserted.');
 					}
 				}, function(err) {
@@ -118,6 +122,7 @@ var init = function() {
 				});
 			});
 		}, function(err) {
+			log('DB error: '+err);
 			throw new Error('DB error: '+err);
 		});
 	});
@@ -125,18 +130,22 @@ var init = function() {
 
 var watchNewReplays = function() {
 	var path = getNDPath();
-	console.log('Init watching of new replay files')
+	log('Init watching of new replay files')
 	chokidar.watch(path, {ignoreInitial: true}).on('add', (file) => {
 		parse(file).then(function(run) {
-			db.insertRun(run).then(insertedRun => {console.log('Inserted new run:', insertedRun);});
+			db.insertRun(run).then(insertedRun => {log('Inserted new run:'+ insertedRun);});
 		});
 	});
 };
 
-var startReplay = function() {
+var startReplay = function(logs) {
+	initLog(logs);
+	log('Starting replay watcher');
 	try{
 		init().then(watchNewReplays);
 	} catch(e) {
-		console.error(e);
+		log(e, 'ERROR');
 	}
 };
+
+module.exports.startReplay = startReplay;

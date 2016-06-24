@@ -5,7 +5,15 @@
   </head>
   <body>
     <h1>Hello World!</h1>
-    <script type="text/javascript" src="all.js"></script>
-    <button onclick="startReplay();">Start replay watcher</button>
+    <button id="replay-watcher">Start replay watcher</button>
+    <script type="text/javascript">
+    	var app = require('./all');
+    	document.getElementById('replay-watcher').addEventListener('click', function() {
+    		console.log('clicked');
+    		app.startReplay(document.getElementById('logs'));
+    	});
+
+    </script>
+    <div id="logs"></div>
   </body>
 </html>

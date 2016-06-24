@@ -2,9 +2,11 @@ var sqlite3 = require('sqlite3').verbose();
 var db = new sqlite3.Database('necrostats');
 var Promise = require('bluebird');
 var _ = require('lodash');
+var log = require('./log').log;
 
 var initDB = function() {
 	return new Promise(function(resolve, reject) {
+		log('Starting DB init');
 		db.serialize(function() {
 			db.run(`CREATE TABLE IF NOT EXISTS run
 					(run_id integer,
@@ -25,7 +27,9 @@ var initDB = function() {
 					score integer,
 					imported_date integer,
 					PRIMARY KEY (run_id) ON CONFLICT ABORT)`, function(err) {
+						log('DB init 1/4');
 						if(err) {
+							log('Error 1/4:'+err+JSON.stringify(this));
 							reject(err);
 						}
 					});
@@ -33,12 +37,20 @@ var initDB = function() {
 					(tag_id integer,
 					name text,
 					color text,
-					PRIMARY KEY (tag_id) ON CONFLICT ABORT)`);
+					PRIMARY KEY (tag_id) ON CONFLICT ABORT)`, function(err) {
+						log('DB init 2/4');
+						if(err) {
+							log('Error 2/4:'+err);
+							reject(err);
+						}
+					});
 			db.run(`CREATE TABLE IF NOT EXISTS run_tag
 					(run_id integer REFERENCES run (run_id),
 					tag_id integer REFERENCES tag (tag_id),
 					PRIMARY KEY (run_id, tag_id) ON CONFLICT ABORT)`, function(err) {
+						log('DB init 3/4');
 						if(err) {
+							log('Error 3/4:'+err);
 							reject(err);
 						}
 					});
@@ -47,7 +59,9 @@ var initDB = function() {
 					bugged_reason text,
 					bugged_data text,
 					PRIMARY KEY (run_id, bugged_reason) ON CONFLICT ABORT)`, function(err) {
+						log('DB init 4/4');
 						if(err) {
+							log('Error 4/4:'+err);
 							reject(err);
 						} else {
 							resolve();
@@ -68,6 +82,7 @@ var getAllFiles = function() {
 var insertRun = function(run) {
 	return new Promise(function(resolve, reject) {
 		if(!run) {
+			log('No run to insert');
 			resolve(0);
 		} else {			
 			var runQuery = `INSERT INTO run 
@@ -134,6 +149,7 @@ var insertRun = function(run) {
 var insertRuns = function(runs) {
 	return new Promise(function(resolve, reject) {
 		if(!runs.length) {
+			log('No new runs to insert');
 			resolve(0);
 		} else {			
 			var runQuery = `INSERT INTO run 
@@ -176,6 +192,9 @@ var insertRuns = function(runs) {
 				run.endZone+"',"+
 				"strftime('%s','now')),";
 			}
+
+
+			log('Inserting runs');
 
 			db.run(runQuery.slice(0, -1), function(err) {
 				if(err) {
